@@ -106,6 +106,8 @@ void FastVGICPCuda<PointSource, PointTarget>::setInputSource(const PointCloudSou
   vgicp_cuda->calculate_source_covariances(regularization_method_);
 }
 
+
+
 template<typename PointSource, typename PointTarget>
 void FastVGICPCuda<PointSource, PointTarget>::setInputTarget(const PointCloudTargetConstPtr& cloud) {
   // the input cloud is the same as the previous one
@@ -131,6 +133,7 @@ void FastVGICPCuda<PointSource, PointTarget>::setInputTarget(const PointCloudTar
   vgicp_cuda->calculate_target_covariances(regularization_method_);
   vgicp_cuda->create_target_voxelmap();
 }
+
 
 template<typename PointSource, typename PointTarget>
 template<typename PointT>

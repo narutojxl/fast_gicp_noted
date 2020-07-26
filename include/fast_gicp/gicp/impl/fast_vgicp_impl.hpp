@@ -34,7 +34,7 @@ FastVGICP<PointSource, PointTarget>::FastVGICP() {
   regularization_method_ = PLANE;
   corr_dist_threshold_ = std::numeric_limits<float>::max();
 
-  voxel_resolution_ = 1.0;
+  voxel_resolution_ = 1.0; //target point cloud voxel resolution
   search_method_ = DIRECT1;
   voxel_mode_ = ADDITIVE;
 
@@ -107,32 +107,33 @@ void FastVGICP<PointSource, PointTarget>::clearTarget() {
   target_.reset();
 }
 
+
 template<typename PointSource, typename PointTarget>
 void FastVGICP<PointSource, PointTarget>::setInputSource(const PointCloudSourceConstPtr& cloud) {
   if(input_ == cloud) {
     return;
   }
-
   pcl::Registration<PointSource, PointTarget, Scalar>::setInputSource(cloud);
   calculate_covariances(cloud, *source_kdtree, source_covs);
 }
+
 
 template<typename PointSource, typename PointTarget>
 void FastVGICP<PointSource, PointTarget>::setInputTarget(const PointCloudTargetConstPtr& cloud) {
   if(target_ == cloud) {
     return;
   }
-
   pcl::Registration<PointSource, PointTarget, Scalar>::setInputTarget(cloud);
   calculate_covariances(cloud, *target_kdtree, target_covs);
-  create_voxelmap(cloud);
+  create_voxelmap(cloud); //伪代码第6行，只对target点云计算voxel
 }
+
 
 template<typename PointSource, typename PointTarget>
 void FastVGICP<PointSource, PointTarget>::create_voxelmap(const PointCloudTargetConstPtr& cloud) {
   voxels.clear();
   for(int i = 0; i < cloud->size(); i++) {
-    Eigen::Vector3i coord = voxel_coord(cloud->at(i).getVector4fMap());
+    Eigen::Vector3i coord = voxel_coord(cloud->at(i).getVector4fMap()); //点所属的voxel index， 由第一个加入到该voxel中的第一个点决定
 
     auto found = voxels.find(coord);
     if(found == voxels.end()) {
@@ -150,13 +151,14 @@ void FastVGICP<PointSource, PointTarget>::create_voxelmap(const PointCloudTarget
     }
 
     auto& voxel = found->second;
-    voxel->append(cloud->at(i).getVector4fMap(), target_covs[i]);
+    voxel->append(cloud->at(i).getVector4fMap(), target_covs[i]); 
   }
 
   for(auto& voxel : voxels) {
     voxel.second->finalize();
   }
 }
+
 
 template<typename PointSource, typename PointTarget>
 void FastVGICP<PointSource, PointTarget>::computeTransformation(PointCloudSource& output, const Matrix4& guess) {
@@ -231,11 +233,14 @@ std::vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> FastVGIC
   return offsets27;
 }
 
+// 计算对应的voxel index 
 template<typename PointSource, typename PointTarget>
 Eigen::Vector3i FastVGICP<PointSource, PointTarget>::voxel_coord(const Eigen::Vector4f& x) const {
   return (x.array() / voxel_resolution_ - 0.5).floor().template cast<int>().template head<3>();
 }
 
+
+//该voxel index产生时的第一个点
 template<typename PointSource, typename PointTarget>
 Eigen::Vector4f FastVGICP<PointSource, PointTarget>::voxel_origin(const Eigen::Vector3i& coord) const {
   Eigen::Vector3f origin = (coord.cast<float>().array() + 0.5) * voxel_resolution_;
@@ -248,7 +253,6 @@ GaussianVoxel::Ptr FastVGICP<PointSource, PointTarget>::lookup_voxel(const Eigen
   if(found == voxels.end()) {
     return nullptr;
   }
-
   return found->second;
 }
 
@@ -263,6 +267,9 @@ bool FastVGICP<PointSource, PointTarget>::is_converged(const Eigen::Matrix<float
   return std::max(r_delta.maxCoeff(), t_delta.maxCoeff()) < 1;
 }
 
+
+
+
 template<typename PointSource, typename PointTarget>
 Eigen::VectorXf FastVGICP<PointSource, PointTarget>::loss_ls(const Eigen::Matrix<float, 6, 1>& x, Eigen::MatrixXf* J) const {
   Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
@@ -273,7 +280,8 @@ Eigen::VectorXf FastVGICP<PointSource, PointTarget>::loss_ls(const Eigen::Matrix
 
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> losses(input_->size() * offsets.size());
   // use row-major arrangement for ease of repacking
-  std::vector<Eigen::Matrix<float, 3, 6, Eigen::RowMajor>, Eigen::aligned_allocator<Eigen::Matrix<float, 3, 6, Eigen::RowMajor>>> Js(input_->size() * offsets.size());
+  std::vector<Eigen::Matrix<float, 3, 6, Eigen::RowMajor>, 
+    Eigen::aligned_allocator<Eigen::Matrix<float, 3, 6, Eigen::RowMajor>>> Js(input_->size() * offsets.size());
 
   std::atomic_int count(0);
 
@@ -283,21 +291,21 @@ Eigen::VectorXf FastVGICP<PointSource, PointTarget>::loss_ls(const Eigen::Matrix
     const auto& cov_A = source_covs[i];
 
     Eigen::Vector4f transed_mean_A = trans * mean_A;
-    Eigen::Vector3i coord = voxel_coord(transed_mean_A);
+    Eigen::Vector3i coord = voxel_coord(transed_mean_A); //对ai变换后的点计算落进哪个voxel index
 
     bool is_RCR_computed = false;
-    Eigen::Matrix4f RCR;
+    Eigen::Matrix4f RCR; //
     Eigen::Matrix4f skew_mean_A;
 
     for(const auto& offset : offsets) {
-      auto voxel = lookup_voxel(coord + offset);
+      auto voxel = lookup_voxel(coord + offset); //与落进voxel周围的voxels一一计算残差
 
       if(voxel == nullptr) {
         continue;
       }
 
       if(!is_RCR_computed) {
-        RCR = trans * cov_A * trans.transpose();
+        RCR = trans * cov_A * trans.transpose(); //计算T * Ci_A * (T^T)
         RCR(3, 3) = 1;
         skew_mean_A.setZero();
         skew_mean_A.block<3, 3>(0, 0) = skew(transed_mean_A.head<3>());
@@ -311,7 +319,7 @@ Eigen::VectorXf FastVGICP<PointSource, PointTarget>::loss_ls(const Eigen::Matrix
       Eigen::Matrix4f RCR_inv = (cov_B + RCR).inverse();
 
       int n = count++;
-      losses[n] = (RCR_inv * d).head<3>();
+      losses[n] = (RCR_inv * d).head<3>();  //公式10
       Js[n].block<3, 3>(0, 0) = (RCR_inv * skew_mean_A).block<3, 3>(0, 0);
       Js[n].block<3, 3>(0, 3) = -RCR_inv.block<3, 3>(0, 0);
 

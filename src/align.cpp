@@ -43,6 +43,8 @@ void test_pcl(Registration& reg, const pcl::PointCloud<pcl::PointXYZ>::ConstPtr&
   std::cout << "100times:" << multi << "[msec] fitness_score:" << reg.getFitnessScore() << std::endl;
 }
 
+
+
 // benchmark for fast_gicp registration methods
 template<typename Registration>
 void test(Registration& reg, const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& target, const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& source) {

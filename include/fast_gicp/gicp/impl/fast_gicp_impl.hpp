@@ -185,6 +185,7 @@ Eigen::VectorXf FastGICP<PointSource, PointTarget>::loss_ls(const Eigen::Matrix<
   trans.block<3, 1>(0, 3) = x.tail<3>();
 
   std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> losses(input_->size());
+
   // use row-major arrangement for ease of repacking
   std::vector<Eigen::Matrix<float, 3, 6, Eigen::RowMajor>, Eigen::aligned_allocator<Eigen::Matrix<float, 3, 6, Eigen::RowMajor>>> Js(input_->size());
 
@@ -214,7 +215,7 @@ Eigen::VectorXf FastGICP<PointSource, PointTarget>::loss_ls(const Eigen::Matrix<
     Eigen::Vector4f RCRd = RCR_inv * d;
 
     Eigen::Matrix<float, 4, 6> dtdx0 = Eigen::Matrix<float, 4, 6>::Zero();
-    dtdx0.block<3, 3>(0, 0) = skew(transed_mean_A.head<3>());
+    dtdx0.block<3, 3>(0, 0) = skew(transed_mean_A.head<3>()); //TODO: 待验证
     dtdx0.block<3, 3>(0, 3) = -Eigen::Matrix3f::Identity();
 
     Eigen::Matrix<float, 4, 6> jlossexp = RCR_inv * dtdx0;

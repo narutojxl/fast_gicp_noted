@@ -12,7 +12,10 @@
 namespace fast_gicp {
 
 /**
- * @brief Fast GICP algorithm optimized for single threading
+ * @brief Fast GICP algorithm optimized for single threading  
+ *  
+ *   作者对GICP的实现
+ * 
  */
 template<typename PointSource, typename PointTarget>
 class FastGICPSingleThread : public pcl::Registration<PointSource, PointTarget, float> {

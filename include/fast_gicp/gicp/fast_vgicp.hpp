@@ -108,7 +108,10 @@ private:
   RegularizationMethod regularization_method_;
   VoxelAccumulationMode voxel_mode_;
 
-  using VoxelMap = std::unordered_map<Eigen::Vector3i, GaussianVoxel::Ptr, Vector3iHash, std::equal_to<Eigen::Vector3i>, Eigen::aligned_allocator<std::pair<Eigen::Vector3i, GaussianVoxel::Ptr>>>;
+  using VoxelMap = std::unordered_map<Eigen::Vector3i, GaussianVoxel::Ptr,  //用Eigen::Vector3i作为key
+                                      Vector3iHash, 
+                                      std::equal_to<Eigen::Vector3i>, 
+                                      Eigen::aligned_allocator<std::pair<Eigen::Vector3i, GaussianVoxel::Ptr>>>;
   VoxelMap voxels;
 };
 }  // namespace fast_gicp
