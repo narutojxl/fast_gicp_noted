@@ -11,7 +11,7 @@ public:
 
   virtual Eigen::Matrix<Scalar, N, 1> delta(const Eigen::Matrix<Scalar, -1, 1>& e, const Eigen::Matrix<Scalar, -1, -1>& J) const {
     Eigen::Matrix<Scalar, N, N> JJ = J.transpose() * J;
-    Eigen::Matrix<Scalar, N, 1> delta = JJ.llt().solve(J.transpose() * e);
+    Eigen::Matrix<Scalar, N, 1> delta = JJ.llt().solve(J.transpose() * e); //作者的normal equation没有带负号,在外面更新变量的时候带上了
 
     if(!delta.array().isFinite().all()) {
       // std::cerr << "!!!! delta corrupted !!!!" << std::endl;

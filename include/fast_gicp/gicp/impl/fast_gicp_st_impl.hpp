@@ -109,8 +109,8 @@ void FastGICPSingleThread<PointSource, PointTarget>::computeTransformation(Point
 
     Eigen::Matrix<float, 6, 1> delta = solver.delta(loss.cast<double>(), J.cast<double>()).cast<float>();
 
-    x0.head<3>() = (Sophus::SO3f::exp(-delta.head<3>()) * Sophus::SO3f::exp(x0.head<3>())).log(); //TODO: 左乘负扰动，待验证
-    x0.tail<3>() -= delta.tail<3>(); //TODO: 待验证
+    x0.head<3>() = (Sophus::SO3f::exp(-delta.head<3>()) * Sophus::SO3f::exp(x0.head<3>())).log(); //左乘扰动,作者的雅克比是在左扰动下推导的。负的原因是：高斯牛顿求解时，作者的normal equation没有带负号
+    x0.tail<3>() -= delta.tail<3>(); //同上
 
     if(is_converged(delta)) {
       converged_ = true;
@@ -207,11 +207,15 @@ Eigen::VectorXf FastGICPSingleThread<PointSource, PointTarget>::loss_ls(const Ei
     Eigen::Vector4f transed_mean_A = trans * mean_A;
     Eigen::Vector4f d = mean_B - transed_mean_A;  //paper equ(2)
     Eigen::Matrix4f RCR = cov_B + trans * cov_A * trans.transpose();
-    RCR(3, 3) = 1;
+    RCR(3, 3) = 1; //右下角那个元素为1，否则逆不存在
 
     Eigen::Matrix4f RCR_inv = RCR.inverse();
     losses[count] = (RCR_inv * d).eval().head<3>();  //TODO: 跟equ(5)不一样, paper中是(d.transpose() * RCR_inv * d)， 1维
-    Js[count].block<3, 3>(0, 0) = RCR_inv.block<3, 3>(0, 0) * skew(transed_mean_A.head<3>()); //TODO：待验证
+    Js[count].block<3, 3>(0, 0) = RCR_inv.block<3, 3>(0, 0) * skew(transed_mean_A.head<3>()); 
+    //jxl: https://github.com/SMRT-AIST/fast_gicp/issues/20, 个人觉得应该是
+    //Js[count].block<3, 3>(0, 0) = RCR_inv.block<3, 3>(0, 0) * skew(trans.block<3, 3>(0, 0) * mean_A );
+    //fast_gicp_impl.hpp， fast_vgicp_cuda_impl.hpp, fast_vgicp_impl.hpp都好像存在这个问题
+
     Js[count].block<3, 3>(0, 3) = -RCR_inv.block<3, 3>(0, 0);
     count++;
   }
