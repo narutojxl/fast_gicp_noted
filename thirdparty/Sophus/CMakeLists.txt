@@ -29,10 +29,21 @@ ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "^MSVC$")
 ENDIF()
 
 # Add local path for finding packages, set the local version first
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
+#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules") #该下面只有一个eigen3.cmake
 
 # Find Eigen 3 (dependency)
 find_package(Eigen3 3.3.0 REQUIRED)
+
+#list(APPEND CMAKE_PREFIX_PATH "/home/jxl/third_softwares/eigen_3_3_7/INSTALL_DIR/")
+#set(CMAKE_PREFIX_PATH "/home/jxl/third_softwares/eigen_3_3_7/INSTALL_DIR")
+
+
+#find_package(Eigen3 3.3.7 REQUIRED)
+#message("\nSophus\n")
+#message("Found eigen path = ${EIGEN3_INCLUDE_DIR}\n")
+#message("Found eigen version = ${Eigen3_VERSION}\n")
+
+
 
 # Define interface library target
 add_library(sophus INTERFACE)
@@ -97,14 +108,16 @@ target_compile_features (sophus INTERFACE
 add_custom_target(other SOURCES ${SOPHUS_OTHER_FILES})
 
 # Create 'test' make target using ctest
-option(BUILD_TESTS "Build tests." ON)
+# option(BUILD_TESTS "Build tests." ON) #default: ON
+option(BUILD_TESTS "Build tests." OFF)
 if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
 endif()
 
 # Create examples make targets using ctest
-option(BUILD_EXAMPLES "Build examples." ON)
+# option(BUILD_EXAMPLES "Build examples." ON) #default: ON
+option(BUILD_EXAMPLES "Build examples." OFF)
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()

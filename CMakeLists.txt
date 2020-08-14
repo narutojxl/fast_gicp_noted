@@ -15,7 +15,24 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 find_package(catkin REQUIRED)
 
 find_package(PCL REQUIRED)
-find_package(Eigen3 REQUIRED)
+
+
+
+find_package(Eigen3 REQUIRED) #default
+
+
+#ubuntu16.04上即使指定eigen版本，也还是编译不通过
+#set eigen version consistent with sophus's needed eigen >=3.3.0
+#list(APPEND CMAKE_PREFIX_PATH "/home/jxl/third_softwares/eigen_3_3_7/INSTALL_DIR/")
+#set(CMAKE_PREFIX_PATH "/home/jxl/third_softwares/eigen_3_3_7/INSTALL_DIR")
+
+#find_package(Eigen3 3.3.7 REQUIRED)
+#message("\nfast_gicp")
+#message("Found eigen path = ${EIGEN3_INCLUDE_DIR}\n")
+#message("Found eigen version = ${Eigen3_VERSION}\n")
+
+
+
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
