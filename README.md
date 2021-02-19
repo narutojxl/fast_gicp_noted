@@ -1,3 +1,6 @@
+#Note:
+The author's raw repository has updated a lot, this is just a old copy, please see the newest one.
+
 # fast_gicp
 
 This package is a collection of GICP-based fast point cloud registration algorithms. It constains a multi-threaded GICP as well as multi-thread and GPU implementations of our voxelized GICP (VGICP) algorithm. All the implemented algorithms have the PCL registration interface so that they can be used as an inplace replacement for GICP in PCL.
